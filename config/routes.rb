@@ -1,4 +1,4 @@
-Rails.application.routes.draw do |map|
+Couponing::Engine.routes.draw do
   resources :coupons do
     collection do
       get 'test'

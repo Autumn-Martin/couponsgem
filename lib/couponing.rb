@@ -1,4 +1,4 @@
-require 'simple_form'
+#require 'simple_form'
 
 module Couponing
   class Engine < Rails::Engine

@@ -1,5 +1,11 @@
 = Couponing
 
+A simplified/stripped down version of the gem: https://github.com/ssimeonov/couponsgem
+
+The original gem has controllers (that are not in an admin section), simple form (not always wanted), and sqlite (not always used).
+This version will just include the core functionality without an Admin interface.  
+If there was an admin interface, it should include methods to load a user, and authorize the admin user.
+
 A gem (Rails 3 engine) that lets you generate coupon codes based on both a numeric (i.e. 113-22-3) 
 and alpha mask (AA-AA-AA) through a web interface.
 
@@ -21,3 +27,11 @@ There is the Coupons#redeem method which takes a coupon, as well as some metadat
 simply stored. 
 
 Both #redeem and #apply will throw the appropriate exception if there is a problem.
+
+## Installation
+
+gem 'couponing', git: 'git@github.com:Sailias/couponsgem.git', branch: 'master'
+
+Generate all the tables for Couponing
+
+rails g couponing

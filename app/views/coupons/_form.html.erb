@@ -10,28 +10,26 @@
   </div>
 <% end %>
 
-
-<%= simple_form_for @coupon do |f| %>
-  
+<%= form_for @coupon, url: couponing.coupons_path do |f| %>
   <div class="input required">
     How many? 
     <%= text_field_tag :how_many, 1 %>
   </div>
 
-  <%= f.input :name, :label => 'Coupon name'  %>
-  <%= f.input :how_many, :label => 'Number of times redeemable' %>
-  <%= f.input :description, :label => 'Description' %>
-  <%= f.input :alpha_mask, :label => 'Alpha mask', :hint => 'e.g., AA-AA-AA'  %>
-  <%= f.input :digit_mask, :label => 'Digit mask', :hint => 'e.g., 11-11-11'  %>
-  <%= f.input :category_one, :label => 'Category 1', :hint => 'e.g., product'  %>
-  <%= f.input :amount_one, :label => 'Amount off 1', :hint => 'Amount off'  %>
-  <%= f.input :percentage_one, :label => 'Percentage off 1', :hint => 'Amount off, in percent'  %>
+  <%= f.text_field :name, :label => 'Coupon name'  %>
+  <%= f.text_field :how_many, :label => 'Number of times redeemable' %>
+  <%= f.text_field :description, :label => 'Description' %>
+  <%= f.text_field :alpha_mask, :label => 'Alpha mask', :placeholder => 'e.g., AA-AA-AA'  %>
+  <%= f.text_field :digit_mask, :label => 'Digit mask', :placeholder => 'e.g., 11-11-11'  %>
+  <%= f.text_field :category_one, :label => 'Category 1', :placeholder => 'e.g., product'  %>
+  <%= f.text_field :amount_one, :label => 'Amount off 1', :placeholder => 'Amount off'  %>
+  <%= f.text_field :percentage_one, :label => 'Percentage off 1', :placeholder => 'Amount off, in percent'  %>
   
-  <%= f.input :category_two, :label => 'Category 2', :hint => 'e.g., shipping'  %>
-  <%= f.input :amount_two, :label => 'Amount off 2', :hint => 'Amount off'  %>
-  <%= f.input :percentage_two, :label => 'Percentage off 2', :hint => 'Amount off, in percent'  %>
+  <%= f.text_field :category_two, :label => 'Category 2', :placeholder => 'e.g., shipping'  %>
+  <%= f.text_field :amount_two, :label => 'Amount off 2', :placeholder => 'Amount off'  %>
+  <%= f.text_field :percentage_two, :label => 'Percentage off 2', :placeholder => 'Amount off, in percent'  %>
   
-  <%= f.input :expiration, :label => 'Expires', :start_year => Date.today.year, :end_year => Date.today.year + 30  %>
+  <%= f.date_select :expiration, :label => 'Expires', :start_year => Date.today.year, :end_year => Date.today.year + 30  %>
   
-  <%= f.button :submit %>
+  <%= f.submit :submit %>
 <% end %>

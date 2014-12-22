@@ -33,8 +33,8 @@ class Coupon < ActiveRecord::Base
   end
   
   
-  validates :alpha_mask, :presence => true, :format => {:with => /^[a-zA-Z]+(-[a-zA-Z]+)*$/}
-  validates :digit_mask, :presence => true, :format => {:with => /^\d+(-\d+)*$/}
+  validates :alpha_mask, :presence => true, :format => {:with => /\A[a-zA-Z]+(-[a-zA-Z]+)*\z/}
+  validates :digit_mask, :presence => true, :format => {:with => /\A\d+(-\d+)*\z/}
   
   before_create do
     self.digit_code = generate_digit_code
