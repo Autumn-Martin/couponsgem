@@ -35,3 +35,42 @@ gem 'couponing', git: 'git@github.com:Sailias/couponsgem.git', branch: 'master'
 Generate all the tables for Couponing
 
 rails g couponing
+
+## Usage
+
+### Creating coupons
+
+Create a controller to handle your coupons.  It is easier to do it this way as you can made a controller
+behind your own authorization.
+
+Eg.  class Admin::CouponsController < Admin::BaseController
+
+include the coupon CRUD module.
+
+class Admin::CouponsController < Admin::BaseController
+  include Couponing::CrudControllerMethods
+end
+
+You will then have to copy and paste the views into your project.
+
+### Redeeming coupons
+
+Create a controller to handle redeeming coupons.  This will probably be at the root of your project.
+
+class CouponsController < ApplicationController
+  include Couponing::RedemptionControllerMethods
+
+  def product_bag
+    product = Product.find params[:product_id]
+    {
+      price: product.price,
+      shipping: product.shipping,
+      tax: product.calculate_tax
+    }
+  end
+end
+
+The product_bag method is used to pass a hash into the apply method the calculate the discounts from the coupon code.
+This method is called using AJAX and a JSON hash is passed back.
+The coupon discounts are not applied at this time, only caculated.
+

@@ -1,6 +1,9 @@
 class CreateCouponingTable < ActiveRecord::Migration
   def self.up
     create_table :coupons do |t|
+
+      t.references :couponable, :polymorphic => true
+
       t.string :name
       t.string :description
       t.text :metadata
@@ -30,19 +33,9 @@ class CreateCouponingTable < ActiveRecord::Migration
     add_index :coupons, :alpha_code
     add_index :coupons, :digit_code
     
-    
-    create_table :redemptions do |t|
-      t.references :coupon
-      t.string :user_id
-      t.string :transaction_id
-      t.text :metadata
-
-      t.timestamps
-    end
   end
 
   def self.down
     drop_table :coupons
-    drop_table :redemptions
   end
 end

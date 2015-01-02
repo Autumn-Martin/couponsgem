@@ -3,6 +3,7 @@ require 'errors'
 
 class Coupon < ActiveRecord::Base
   has_many :redemptions
+  belongs_to :couponable, polymorphic: true
 
   validates :name, :presence => true
   validates :description, :presence => true
@@ -99,20 +100,22 @@ class Coupon < ActiveRecord::Base
   # Return a hash with the new prices for each product, as well the grand total
   # and total savings
   def self.apply(coupon_code, product_bag = {})
-    r = {:savings => 0.0, :grand_total => 0.0}
+    return_hash = {}
     coupon = find_coupon(coupon_code)
     product_bag.each do |category, price|
       price = Float(price)
-      r[:grand_total] += price
-      r[category] = price
+      category_hash = return_hash[category] = {
+        original_price: price, 
+        savings: 0.0,
+        grand_total: price
+      }
       if coupon
         savings = coupon.savings(category, price)
-        r[:savings] += savings
-        r[:grand_total] -= savings
-        r[category] -= savings
+        category_hash[:savings] += savings
+        category_hash[:grand_total] -= savings
       end
     end
-    return round_values(r)
+    return_hash
   end
   
 
@@ -121,6 +124,10 @@ class Coupon < ActiveRecord::Base
   def self.redeem(coupon_code, user_id, tx_id, metadata)
     coupon = find_coupon(coupon_code)
     coupon.redemptions.create!(:transaction_id => tx_id, :user_id => user_id, :metadata => metadata)    
+  end
+
+  def to_csv
+    [self.name, self.description, self.alpha_code, self.alpha_mask, self.digit_code, self.digit_mask, self.category_one, self.amount_one, self.percentage_one, self.category_two, self.amount_two, self.percentage_two, self.expiration, self.how_many, self.redemptions_count]
   end
    
   private
