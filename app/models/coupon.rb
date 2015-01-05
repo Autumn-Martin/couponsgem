@@ -3,9 +3,9 @@ require 'errors'
 
 class Coupon < ActiveRecord::Base
   has_many :redemptions
-  belongs_to :couponable, polymorphic: true
 
   validates :name, :presence => true
+
   validates :description, :presence => true
   validates :expiration, :presence => true
   validates :how_many, :presence => true, :numericality => true
@@ -105,25 +105,17 @@ class Coupon < ActiveRecord::Base
     product_bag.each do |category, price|
       price = Float(price)
       category_hash = return_hash[category] = {
-        original_price: price, 
-        savings: 0.0,
-        grand_total: price
+        "original_price" => price, 
+        "savings" => 0.0,
+        "grand_total" => price
       }
       if coupon
         savings = coupon.savings(category, price)
-        category_hash[:savings] += savings
-        category_hash[:grand_total] -= savings
+        category_hash["savings"] += savings
+        category_hash["grand_total"] -= savings
       end
     end
     return_hash
-  end
-  
-
-  # create a redemption of a coupon storing the tx_id and any metadata.
-  # throws an exception if the coupon is not valid or any problem creating the redemption
-  def self.redeem(coupon_code, user_id, tx_id, metadata)
-    coupon = find_coupon(coupon_code)
-    coupon.redemptions.create!(:transaction_id => tx_id, :user_id => user_id, :metadata => metadata)    
   end
 
   def to_csv

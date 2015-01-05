@@ -1,5 +1,7 @@
 class Redemption < ActiveRecord::Base
-  belongs_to :coupon, :counter_cache => true
+  belongs_to :coupon, counter_cache: true
+  belongs_to :redeemable, polymorphic: true
+
   validates :coupon_id, :presence => true
 end
 

@@ -2,8 +2,6 @@ class CreateCouponingTable < ActiveRecord::Migration
   def self.up
     create_table :coupons do |t|
 
-      t.references :couponable, :polymorphic => true
-
       t.string :name
       t.string :description
       t.text :metadata
@@ -23,10 +21,17 @@ class CreateCouponingTable < ActiveRecord::Migration
       
       t.date :expiration
       t.integer :how_many, :default => 1
-      
+
       t.integer :redemptions_count, :integer, :default => 0
-  
       
+      t.timestamps
+    end
+
+    create_table :redemptions do |t|
+      t.references :coupon
+      t.references :redeemable, :polymorphic => true
+      t.json :savings_hash
+
       t.timestamps
     end
     
@@ -37,5 +42,6 @@ class CreateCouponingTable < ActiveRecord::Migration
 
   def self.down
     drop_table :coupons
+    drop_table :redemptions
   end
 end
