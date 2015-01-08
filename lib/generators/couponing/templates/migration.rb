@@ -30,7 +30,7 @@ class CreateCouponingTable < ActiveRecord::Migration
     create_table :redemptions do |t|
       t.references :coupon
       t.references :redeemable, :polymorphic => true
-      t.json :savings_hash
+      t.text :savings_hash
 
       t.timestamps
     end

@@ -3,6 +3,8 @@ class Redemption < ActiveRecord::Base
   belongs_to :redeemable, polymorphic: true
 
   validates :coupon_id, :presence => true
+
+  serialize :savings_hash
 end
 
 
