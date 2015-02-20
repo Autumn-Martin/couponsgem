@@ -57,7 +57,25 @@ module Couponing
       end
     end
 
+    def edit
+      load_coupon
+    end
+
+    def update
+      load_coupon
+      if @coupon.update coupon_params
+        redirect_to coupon_redirect_path(after: @first_coupon)
+      else
+        render action: "edit"
+      end
+    end
+
     protected
+
+    def load_coupon
+      @coupon = Coupon.find params[:id]
+      raise ActiveRecord::RecordNotFound unless @coupon.can_edit?
+    end
 
     def coupon_params
       params.require(:coupon).permit(
@@ -65,7 +83,9 @@ module Couponing
         :description,
         :how_many,
         :alpha_mask,
+        :alpha_code,
         :digit_mask,
+        :digit_code,
         :category_one,
         :amount_one,
         :percentage_one,
@@ -73,7 +93,6 @@ module Couponing
         :amount_two,
         :percentage_two,
         :expiration
-
       )
     end
 

@@ -121,6 +121,10 @@ class Coupon < ActiveRecord::Base
   def to_csv
     [self.name, self.description, self.alpha_code, self.alpha_mask, self.digit_code, self.digit_mask, self.category_one, self.amount_one, self.percentage_one, self.category_two, self.amount_two, self.percentage_two, self.expiration, self.how_many, self.redemptions_count]
   end
+
+  def can_edit?
+    self.redemptions.empty?
+  end
    
   private
   
