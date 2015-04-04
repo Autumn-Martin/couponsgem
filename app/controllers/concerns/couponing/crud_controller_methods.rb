@@ -6,6 +6,8 @@ module Couponing
     end
 
     def index
+      require "csv"
+
       @coupons = Coupon
       @coupons = @coupons.where(["id >= ?", params[:after]]) if params[:after]
       @coupons = @coupons.all
