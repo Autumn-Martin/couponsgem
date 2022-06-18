@@ -39,7 +39,11 @@ class Coupon < ActiveRecord::Base
   
   before_create do
     self.digit_code = generate_digit_code
-    self.alpha_code = generate_alpha_code
+    self.alpha_code = generate_alpha_code.upcase
+  end
+
+  before_update do
+    self.alpha_code = self.alpha_code ? self.alpha_code.upcase : nil
   end
   
   scope :not_expired, lambda {
