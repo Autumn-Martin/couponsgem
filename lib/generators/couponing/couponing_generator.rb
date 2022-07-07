@@ -16,5 +16,6 @@ class CouponingGenerator < Rails::Generators::Base
 
   def create_migration_file
     migration_template 'migration.rb', 'db/migrate/create_couponing_table.rb'
+    migration_template 'offers_migratrion.rb', 'db/migrate/create_offers_table.rb'
   end
 end

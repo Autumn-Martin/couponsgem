@@ -3,6 +3,7 @@ require 'errors'
 
 class Coupon < ActiveRecord::Base
   has_many :redemptions
+  has_many :offers, as: :offerable
 
   validates :name, :presence => true
 
