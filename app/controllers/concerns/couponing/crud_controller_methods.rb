@@ -10,16 +10,19 @@ module Couponing
 
       @coupons = Coupon
       @coupons = @coupons.where(["id >= ?", params[:after]]) if params[:after]
-      @coupons = @coupons.all
+      @coupons = @coupons.all.includes(:offers).references(:offers).group("coupons.id, coupons.name").pluck(
+        <<~PLUCK
+          coupons.name, description, alpha_code, alpha_mask, digit_code, digit_mask, category_one, amount_one, percentage_one, category_two, amount_two, percentage_two, expiration, how_many, redemptions_count,
+          coalesce(string_agg(offers.code, ', '), '') AS offer_list
+        PLUCK
+      )
 
       respond_to do |format|
         format.html
         format.csv do
           csv_string = CSV.generate(:force_quotes => true) do |csv| 
-            csv << ["name","description", "alpha_code", "alpha_mask", "digit_code", "digit_mask", "category_one", "amount_one", "percentage_one", "category_two", "amount_two", "percentage_two", "expiration", "how_many", "redemptions_count"]
-            @coupons.each do |c|
-              csv << c.to_csv
-            end
+            csv << ["name","description", "alpha_code", "alpha_mask", "digit_code", "digit_mask", "category_one", "amount_one", "percentage_one", "category_two", "amount_two", "percentage_two", "expiration", "how_many", "redemptions_count", "offer_list"]
+            @coupons.each { |coupon| csv << coupon }
           end
           send_data csv_string, :type => "text/plain",  :filename=>"coupons.csv", :disposition => 'attachment'
         end
@@ -40,10 +43,12 @@ module Couponing
             @coupon.errors.add(:base, "How many must be positive")
             flash[:coupon_error] = "How many must be positive"
           end
+          offers = @coupon.validate_new_offers(offer_params[:offers])
           if @coupon.errors.empty? && @coupon.valid?
             create_count = 0
             Integer(num_requested).times do |i|
               coupon = Coupon.new(coupon_params)
+              coupon.offers = offers
               if coupon.save
                 @first_coupon ||= coupon.id
                 create_count += 1
@@ -65,7 +70,11 @@ module Couponing
 
     def update
       load_coupon
-      if @coupon.update coupon_params
+      @coupon.update_offers(offer_params[:offers])
+
+      if @coupon.errors.messages.present?
+        render action: "edit"
+      elsif @coupon.update coupon_params
         redirect_to coupon_redirect_path(after: @first_coupon)
       else
         render action: "edit"
@@ -96,6 +105,10 @@ module Couponing
         :percentage_two,
         :expiration
       )
+    end
+
+    def offer_params
+      params.require(:coupon).permit(offers: [])
     end
 
   end

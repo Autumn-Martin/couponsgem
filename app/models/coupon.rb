@@ -20,7 +20,6 @@ class Coupon < ActiveRecord::Base
 
   validates :amount_two, :numericality => true
   validates :percentage_two, :numericality => true
-
   
   # Check to see if, given the size of the mask and the number of requested coupons
   # see if it is possible to generate that many coupons. Raise an error otherwise
@@ -104,9 +103,9 @@ class Coupon < ActiveRecord::Base
   # Apply a coupon (or throw an exception if the coupon is not valid)
   # Return a hash with the new prices for each product, as well the grand total
   # and total savings
-  def self.apply(coupon_code, product_bag = {})
+  def self.apply(coupon_code, offer_code, product_bag = {})
     return_hash = {}
-    coupon = find_coupon(coupon_code)
+    coupon = find_coupon(coupon_code, offer_code)
     product_bag.each do |category, price|
       price = Float(price)
       category_hash = return_hash[category] = {
@@ -130,11 +129,45 @@ class Coupon < ActiveRecord::Base
   def can_edit?
     self.redemptions.empty?
   end
+
+  def validate_new_offers(offer_codes)
+    offer_codes = offer_codes.select(&:present?)
+    if offer_codes.blank?
+      self.errors.add(:offer, "code is required")
+    end
+    offer_codes.map do |offer_code|
+      offer = Offer.new(code: offer_code)
+      if !offer.valid?
+        self.errors.add(:offer, "code #{offer_code} is not valid")
+      end
+      offer
+    end
+  end
+
+  def update_offers(offer_codes)
+    updated_codes =  offer_codes.select(&:present?)
+
+    if updated_codes.blank?
+      self.errors.add(:offer, "code is required")
+      return []
+    end
+
+    existing_codes = self.offers.pluck(:code)
+    added_codes = updated_codes - existing_codes
+    removed_codes = existing_codes - updated_codes
+
+    removed_codes.each do |code|
+      Offer.find_by(offerable_id: self.id, code: code).destroy
+    end
+    added_codes.each do |code|
+      self.offers << Offer.new(code: code)
+    end
+  end
    
   private
   
   # find the coupon, or raise an exception if that coupon is not valid
-  def self.find_coupon(coupon_code, user_id = nil)
+  def self.find_coupon(coupon_code, offer_code, user_id = nil)
     coupon = Coupon.with_code(coupon_code.upcase).first
     raise CouponNotFound if coupon.nil?
     if user_id && coupon.redemptions.find_by_user_id(user_id)
@@ -142,6 +175,7 @@ class Coupon < ActiveRecord::Base
     end
     raise CouponRanOut if coupon.redemptions_count >= coupon.how_many
     raise CouponExpired if coupon.expiration < Time.now.to_date
+    raise CouponNotApplicable if coupon.offers.present? && !coupon.offers.pluck(:code).include?(offer_code)
     return coupon
   end
    
