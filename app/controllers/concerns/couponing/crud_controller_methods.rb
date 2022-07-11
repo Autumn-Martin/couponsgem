@@ -43,7 +43,9 @@ module Couponing
             @coupon.errors.add(:base, "How many must be positive")
             flash[:coupon_error] = "How many must be positive"
           end
-          offers = @coupon.validate_new_offers(offer_params[:offers])
+          offers = offer_params[:offers].select(&:present?).map {|offer_code| Offer.new(code: offer_code)}
+          @coupon.offers = offers
+
           if @coupon.errors.empty? && @coupon.valid?
             create_count = 0
             Integer(num_requested).times do |i|
@@ -70,14 +72,13 @@ module Couponing
 
     def update
       load_coupon
-      @coupon.update_offers(offer_params[:offers])
+
+      @coupon.update_coupon_offers(coupon_params, offer_params[:offers])
 
       if @coupon.errors.messages.present?
         render action: "edit"
-      elsif @coupon.update coupon_params
-        redirect_to coupon_redirect_path(after: @first_coupon)
       else
-        render action: "edit"
+        redirect_to coupon_redirect_path(after: @first_coupon)
       end
     end
 

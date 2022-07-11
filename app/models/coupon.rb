@@ -3,7 +3,8 @@ require 'errors'
 
 class Coupon < ActiveRecord::Base
   has_many :redemptions
-  has_many :offers, as: :offerable
+  has_many :offers, as: :offerable, dependent: :destroy
+  validates_presence_of :offers
 
   validates :name, :presence => true
 
@@ -130,38 +131,23 @@ class Coupon < ActiveRecord::Base
     self.redemptions.empty?
   end
 
-  def validate_new_offers(offer_codes)
-    offer_codes = offer_codes.select(&:present?)
-    if offer_codes.blank?
-      self.errors.add(:offer, "code is required")
-    end
-    offer_codes.map do |offer_code|
-      offer = Offer.new(code: offer_code)
-      if !offer.valid?
-        self.errors.add(:offer, "code #{offer_code} is not valid")
-      end
-      offer
+  def update_coupon_offers(coupon, offer_codes)
+    Coupon.transaction do
+      self.update_offers(offer_codes)
+      self.update(coupon)
     end
   end
 
-  def update_offers(offer_codes)
-    updated_codes =  offer_codes.select(&:present?)
+  def update_offers(codes)
+    existing_offers = self.offers.select(:id,:code)
+    existing_codes = existing_offers.pluck(:code)
 
-    if updated_codes.blank?
-      self.errors.add(:offer, "code is required")
-      return []
-    end
-
-    existing_codes = self.offers.pluck(:code)
+    updated_codes = codes.select(&:present?)
     added_codes = updated_codes - existing_codes
     removed_codes = existing_codes - updated_codes
+    removed_offers = existing_offers.where(code: removed_codes).destroy_all
 
-    removed_codes.each do |code|
-      Offer.find_by(offerable_id: self.id, code: code).destroy
-    end
-    added_codes.each do |code|
-      self.offers << Offer.new(code: code)
-    end
+    added_codes.map {|code| self.offers << Offer.new(code: code) }
   end
    
   private
@@ -175,6 +161,7 @@ class Coupon < ActiveRecord::Base
     end
     raise CouponRanOut if coupon.redemptions_count >= coupon.how_many
     raise CouponExpired if coupon.expiration < Time.now.to_date
+    # Allows generic coupons that were made prior to specificity requirement to still work
     raise CouponNotApplicable if coupon.offers.present? && !coupon.offers.pluck(:code).include?(offer_code)
     return coupon
   end
