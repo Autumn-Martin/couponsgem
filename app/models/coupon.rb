@@ -145,8 +145,8 @@ class Coupon < ActiveRecord::Base
     updated_codes = codes.select(&:present?)
     added_codes = updated_codes - existing_codes
     removed_codes = existing_codes - updated_codes
-    removed_offers = existing_offers.where(code: removed_codes).destroy_all
-
+    
+    existing_offers.where(code: existing_codes - updated_codes).destroy_all
     added_codes.map {|code| self.offers << Offer.new(code: code) }
   end
    
