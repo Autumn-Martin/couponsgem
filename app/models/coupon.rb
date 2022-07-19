@@ -3,8 +3,11 @@ require 'errors'
 
 class Coupon < ActiveRecord::Base
   has_many :redemptions
-  has_many :offers, as: :offerable, dependent: :destroy
-  validates_presence_of :offers
+  has_many :offers, dependent: :destroy
+
+  accepts_nested_attributes_for :offers, allow_destroy: true
+
+  validates :offers, presence: true
 
   validates :name, :presence => true
 
