@@ -37,15 +37,16 @@ ActiveRecord::Schema.define(version: 20220704221232) do
 
   add_index "coupons", ["alpha_code"], name: "index_coupons_on_alpha_code"
   add_index "coupons", ["digit_code"], name: "index_coupons_on_digit_code"
-
+  
   create_table "offers", force: :cascade do |t|
-    t.string   "code",           limit: 255
-    t.integer  "offerable_id",               null: false
-    t.string   "offerable_type",             null: false
-    t.datetime "created_at",                 null: false
-    t.datetime "updated_at",                 null: false
+    t.integer  "offerable_id",   null: false
+    t.string   "offerable_type", null: false
+    t.integer  "coupon_id",      null: false
+    t.datetime "created_at",     null: false
+    t.datetime "updated_at",     null: false
   end
 
+  add_index "offers", ["coupon_id"], name: "index_offers_on_coupon_id", using: :btree
   add_index "offers", ["offerable_type", "offerable_id"], name: "index_offers_on_offerable_type_and_offerable_id"
 
   create_table "redemptions", force: :cascade do |t|
