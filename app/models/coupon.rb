@@ -129,25 +129,6 @@ class Coupon < ActiveRecord::Base
   def can_edit?
     self.redemptions.empty?
   end
-
-  def update_coupon_offers(coupon, offer_codes)
-    Coupon.transaction do
-      self.update_offers(offer_codes)
-      self.update(coupon)
-    end
-  end
-
-  def update_offers(codes)
-    existing_offers = self.offers.select(:id,:code)
-    existing_codes = existing_offers.pluck(:code)
-
-    updated_codes = codes.select(&:present?)
-    added_codes = updated_codes - existing_codes
-    removed_codes = existing_codes - updated_codes
-    
-    existing_offers.where(code: existing_codes - updated_codes).destroy_all
-    added_codes.map {|code| self.offers << Offer.new(code: code) }
-  end
    
   private
   
