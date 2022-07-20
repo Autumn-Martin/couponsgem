@@ -2,12 +2,8 @@ require 'errors'
 
 
 class Coupon < ActiveRecord::Base
+  include Couponing::OfferSpecifics
   has_many :redemptions
-  has_many :offers, dependent: :destroy
-
-  accepts_nested_attributes_for :offers, allow_destroy: true
-
-  validates :offers, presence: true
 
   validates :name, :presence => true
 
