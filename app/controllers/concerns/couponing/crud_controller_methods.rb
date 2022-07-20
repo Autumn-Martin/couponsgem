@@ -87,9 +87,7 @@ module Couponing
     end
 
     def load_offers
-      # TODO: maybe constants are better here?
-      offerables = Offer.distinct(:offerable_type).pluck(:offerable_type).collect {|o| o.constantize.all}.flatten
-      @available_offers = offerables.map {|o| Offer.find_or_initialize_by(offerable_id: o.id, offerable_type: o.class.name, coupon_id: @coupon.id) }
+      @available_offers = @coupon.available_offers
     end
 
     def coupon_params
