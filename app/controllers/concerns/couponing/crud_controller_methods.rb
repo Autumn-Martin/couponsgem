@@ -3,26 +3,24 @@ module Couponing
 
     def new
       @coupon = Coupon.new
+      load_offers
     end
 
     def index
       require "csv"
 
-      @coupons = Coupon
+      @coupons = Coupon.all
       @coupons = @coupons.where(["id >= ?", params[:after]]) if params[:after]
-      @coupons = @coupons.all.includes(:offers).references(:offers).group("coupons.id, coupons.name").pluck(
-        <<~PLUCK
-          coupons.name, description, alpha_code, alpha_mask, digit_code, digit_mask, category_one, amount_one, percentage_one, category_two, amount_two, percentage_two, expiration, how_many, redemptions_count,
-          coalesce(string_agg(offers.code, ', '), '') AS offer_list
-        PLUCK
-      )
 
       respond_to do |format|
         format.html
         format.csv do
           csv_string = CSV.generate(:force_quotes => true) do |csv| 
             csv << ["name","description", "alpha_code", "alpha_mask", "digit_code", "digit_mask", "category_one", "amount_one", "percentage_one", "category_two", "amount_two", "percentage_two", "expiration", "how_many", "redemptions_count", "offer_list"]
-            @coupons.each { |coupon| csv << coupon }
+            @coupons.each do |c|
+              row = c.to_csv << c.offer_list
+              csv << row
+            end
           end
           send_data csv_string, :type => "text/plain",  :filename=>"coupons.csv", :disposition => 'attachment'
         end
@@ -33,6 +31,7 @@ module Couponing
       respond_to do |format|
         format.html do
           @coupon = Coupon.new coupon_params
+          load_offers
           num_requested = params[:num_requested].blank? ? 1 : params[:num_requested]
 
           unless Coupon.enough_space?(@coupon.alpha_mask, @coupon.digit_mask, Integer(num_requested))
@@ -43,14 +42,11 @@ module Couponing
             @coupon.errors.add(:base, "How many must be positive")
             flash[:coupon_error] = "How many must be positive"
           end
-          offers = offer_params[:offers].select(&:present?).map {|offer_code| Offer.new(code: offer_code)}
-          @coupon.offers = offers
 
           if @coupon.errors.empty? && @coupon.valid?
             create_count = 0
             Integer(num_requested).times do |i|
               coupon = Coupon.new(coupon_params)
-              coupon.offers = offers
               if coupon.save
                 @first_coupon ||= coupon.id
                 create_count += 1
@@ -73,7 +69,7 @@ module Couponing
     def update
       load_coupon
 
-      @coupon.update_coupon_offers(coupon_params, offer_params[:offers])
+      @coupon.update coupon_params
 
       if @coupon.errors.messages.present?
         render action: "edit"
@@ -87,6 +83,13 @@ module Couponing
     def load_coupon
       @coupon = Coupon.find params[:id]
       raise ActiveRecord::RecordNotFound unless @coupon.can_edit?
+      load_offers
+    end
+
+    def load_offers
+      # TODO: maybe constants are better here?
+      offerables = Offer.distinct(:offerable_type).pluck(:offerable_type).collect {|o| o.constantize.all}.flatten
+      @available_offers = offerables.map {|o| Offer.find_or_initialize_by(offerable_id: o.id, offerable_type: o.class.name, coupon_id: @coupon.id) }
     end
 
     def coupon_params
@@ -104,13 +107,9 @@ module Couponing
         :category_two,
         :amount_two,
         :percentage_two,
-        :expiration
+        :expiration,
+        offers_attributes: [:_destroy, :id, :offerable_id, :offerable_type]
       )
     end
-
-    def offer_params
-      params.require(:coupon).permit(offers: [])
-    end
-
   end
 end
