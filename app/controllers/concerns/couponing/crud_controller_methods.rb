@@ -3,14 +3,14 @@ module Couponing
 
     def new
       @coupon = Coupon.new
-      load_offers
     end
 
     def index
       require "csv"
 
-      @coupons = Coupon.all
+      @coupons = Coupon
       @coupons = @coupons.where(["id >= ?", params[:after]]) if params[:after]
+      @coupons = @coupons.all
 
       respond_to do |format|
         format.html
@@ -31,7 +31,6 @@ module Couponing
       respond_to do |format|
         format.html do
           @coupon = Coupon.new coupon_params
-          load_offers
           num_requested = params[:num_requested].blank? ? 1 : params[:num_requested]
 
           unless Coupon.enough_space?(@coupon.alpha_mask, @coupon.digit_mask, Integer(num_requested))
@@ -42,7 +41,6 @@ module Couponing
             @coupon.errors.add(:base, "How many must be positive")
             flash[:coupon_error] = "How many must be positive"
           end
-
           if @coupon.errors.empty? && @coupon.valid?
             create_count = 0
             Integer(num_requested).times do |i|
@@ -69,12 +67,10 @@ module Couponing
     def update
       load_coupon
 
-      @coupon.update coupon_params
-
-      if @coupon.errors.messages.present?
-        render action: "edit"
-      else
+      if @coupon.update coupon_params
         redirect_to coupon_redirect_path(after: @first_coupon)
+      else
+        render action: "edit"
       end
     end
 
@@ -83,11 +79,6 @@ module Couponing
     def load_coupon
       @coupon = Coupon.find params[:id]
       raise ActiveRecord::RecordNotFound unless @coupon.can_edit?
-      load_offers
-    end
-
-    def load_offers
-      @available_offers = @coupon.available_offers
     end
 
     def coupon_params
