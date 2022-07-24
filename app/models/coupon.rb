@@ -103,9 +103,9 @@ class Coupon < ActiveRecord::Base
   # Apply a coupon (or throw an exception if the coupon is not valid)
   # Return a hash with the new prices for each product, as well the grand total
   # and total savings
-  def self.apply(coupon_code, offer_code, product_bag = {})
+  def self.apply(coupon_code, offerable, product_bag = {})
     return_hash = {}
-    coupon = find_coupon(coupon_code, offer_code)
+    coupon = find_coupon(coupon_code, offerable)
     product_bag.each do |category, price|
       price = Float(price)
       category_hash = return_hash[category] = {
@@ -133,7 +133,7 @@ class Coupon < ActiveRecord::Base
   private
   
   # find the coupon, or raise an exception if that coupon is not valid
-  def self.find_coupon(coupon_code, offer_code, user_id = nil)
+  def self.find_coupon(coupon_code, offerable, user_id = nil)
     coupon = Coupon.with_code(coupon_code.upcase).first
     raise CouponNotFound if coupon.nil?
     if user_id && coupon.redemptions.find_by_user_id(user_id)
@@ -142,7 +142,7 @@ class Coupon < ActiveRecord::Base
     raise CouponRanOut if coupon.redemptions_count >= coupon.how_many
     raise CouponExpired if coupon.expiration < Time.now.to_date
     # Allows generic coupons that were made prior to specificity requirement to still work
-    raise CouponNotApplicable if coupon.offers.present? && !coupon.offers.pluck(:code).include?(offer_code)
+    raise CouponNotApplicable if coupon.offers.present? && coupon.offers.where(offerable: offerable).blank?
     return coupon
   end
    

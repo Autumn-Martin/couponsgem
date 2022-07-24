@@ -10,5 +10,7 @@ module Couponing::OfferSpecifics
   end
 
   def offer_list; end
-  def available_offers; end
+  def available_offers
+    []
+  end
 end
